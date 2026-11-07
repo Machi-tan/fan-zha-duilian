@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>反诈对练场 · Demo</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--line:#e3e6ea;--text:#1f2329;--muted:#6b7280;--brand:#0a66ff;--danger:#e5484d;--ok:#12805c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+header{padding:14px 22px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+header h1{font-size:17px;margin:0}
+.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.wrap{display:flex;gap:16px;padding:16px;max-width:1180px;margin:0 auto;align-items:flex-start}
+aside{width:260px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;flex-shrink:0}
+aside h2{font-size:13px;color:var(--muted);margin:4px 4px 10px;font-weight:600}
+.script{padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.script:hover{background:#f0f4ff}
+.script.active{background:#e8f0ff;color:var(--brand);font-weight:600}
+.script small{color:var(--muted);font-weight:400}
+main{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:560px}
+.chat-title{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.chat-title span{font-weight:400;color:var(--muted);font-size:13px}
+.msgs{padding:16px;flex:1;overflow-y:auto;max-height:420px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:78%;padding:9px 13px;border-radius:10px;font-size:14px;white-space:pre-wrap}
+.msg.bot{background:#f0f2f5;align-self:flex-start}
+.msg.typing{color:#9aa1ab;font-style:italic}
+.msg.me{background:var(--brand);color:#fff;align-self:flex-end}
+.inputbar{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+input{flex:1;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;outline:none}
+input:focus{border-color:var(--brand)}
+button{border:0;border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer}
+#send{background:var(--brand);color:#fff}
+#review{background:#fff;border:1px solid var(--line);color:var(--danger)}
+.note{font-size:12px;color:var(--muted);padding:0 16px 12px}
+.panel{padding:16px;display:none}
+.panel.show{display:block}
+.panel h3{margin:0 0 10px;font-size:16px}
+.score{font-size:40px;font-weight:700;color:var(--brand)}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;background:#eef2ff;color:var(--brand);font-size:13px;margin-left:8px}
+.flag{border-left:3px solid var(--danger);background:#fff5f5;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:13px}
+.parts{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:10px 0}
+.part{display:flex;justify-content:space-between;background:#f7f8fa;border-radius:6px;padding:6px 10px;font-size:13px}
+.part b{font-weight:600}
+.part b.ok{color:var(--ok)}
+.part b.bad{color:var(--danger)}
+input:disabled{background:#f3f4f6;color:#9aa1ab}
+ul{padding-left:18px;margin:6px 0}
+@media(max-width:860px){.wrap{flex-direction:column}aside{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <h1>反诈对练场</h1>
+  <span class="tag">Demo · 本地模拟（非真实诈骗）</span>
+  <span class="tag">仅用于反诈教育</span>
+</header>
+<div class="wrap">
+  <aside>
+    <h2>选择剧本</h2>
+    <div id="list"></div>
+  </aside>
+  <main>
+    <div class="chat-title"><span id="cur-title">请选择左侧剧本开始</span><span id="cur-stage"></span></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="inputbar">
+      <input id="say" placeholder="输入你的回应……" autocomplete="off">
+      <button id="send">发送</button>
+      <button id="review">结束并复盘</button>
+    </div>
+    <div class="note">当前为演示版本：剧本话术来自本地剧本库，评分由前端规则模拟；正式版由 AgentArts 上的三个 Agent 实时生成。</div>
+    <div class="panel" id="panel"></div>
+  </main>
+</div>
+<script>
+const SCRIPTS = [{"id": "S01", "type": "冒充公检法", "difficulty": 2, "stages": [{"name": "铺垫", "goal": "建立权威身份", "lines": ["你好，请问是XXX本人吗？这里是XX市公安局刑侦支队。", "我们这边接到通报，你名下一张银行卡涉嫌一起洗钱案件，需要你配合调查。"]}, {"name": "设套", "goal": "制造紧迫感与信息不对称", "lines": ["案件目前处于保密阶段，你不能告诉任何人，包括家人。", "为了证明你的清白，需要你配合做一次资金核查。"]}, {"name": "施压", "goal": "孤立受害人、制造恐惧", "lines": ["如果你不配合，我们只能按涉案人员处理，可能会影响你的征信和子女。", "现在加我微信，我给你发一份'协查通知'。"]}, {"name": "收网", "goal": "诱导转账", "lines": ["把你卡里的钱转到我们指定的'安全账户'，核查无误后 24 小时内原路退回。", "转账时备注'资金核查'，不要告诉银行工作人员真实用途。"]}], "red_flags": ["自称公检法并要求电话办案", "要求转账至所谓'安全账户'", "要求对家人保密", "要求向银行隐瞒转账用途"], "correct": ["挂断电话，拨打 96110 或 110 核实", "公检法不会电话办案，不存在'安全账户'", "不向任何陌生账户转账"]}, {"id": "S02", "type": "刷单返利", "difficulty": 1, "stages": [{"name": "铺垫", "goal": "用低门槛任务吸引参与", "lines": ["亲，我们平台在招兼职，动动手指点赞就能拿佣金，一单 5-30 元。", "先做一单试试？做完马上返现。"]}, {"name": "设套", "goal": "用真实小额返利建立信任", "lines": ["第一单已经返给你了，对吧？现在有'连单任务'，佣金更高。", "这一单需要你先垫付 300 元，完成后本金加佣金一起返。"]}, {"name": "施压", "goal": "制造'不做就亏'的心理", "lines": ["系统显示你这单操作超时，需要再做一单'修复单'才能一起提现。", "前面的钱已经投进去了，现在停下就都拿不回来了。"]}, {"name": "收网", "goal": "诱导持续垫付", "lines": ["最后一单，做完马上全部返还。", "你扫码支付就行，备注不用写。"]}], "red_flags": ["先小额返利后要求垫付", "'连单''修复单'话术", "以'不继续就提现失败'施压", "要求扫码转账且不备注"], "correct": ["任何要求先垫付的兼职都是诈骗", "立即停止转账并保留证据", "拨打 96110 咨询"]}, {"id": "S03", "type": "冒充客服退款", "difficulty": 2, "stages": [{"name": "铺垫", "goal": "用订单信息取得信任", "lines": ["您好，我是XX平台客服，您 X 月 X 日买的商品有质量问题，平台要给您三倍赔付。", "为了核实身份，请报一下您的订单号后四位。"]}, {"name": "设套", "goal": "引导脱离平台操作", "lines": ["赔付需要走'理赔通道'，请加我们客服微信。", "您先开通一下'备用金'，赔付会打到这个账户。"]}, {"name": "施压", "goal": "利用'多赔了要还'制造操作压力", "lines": ["系统显示赔付金额多打了，麻烦您把多出来的部分退回来。", "如果不退，会影响您的平台信用。"]}, {"name": "收网", "goal": "诱导转账或借贷", "lines": ["您把多打的钱转到这个'对公账户'就行。", "或者您先借一笔'备用金'垫付，后面一起结算。"]}], "red_flags": ["主动联系称商品有问题要赔付", "要求加微信/QQ 脱离平台", "引导开通借贷产品", "要求把'多打的钱'转回"], "correct": ["只在官方 App 内查看订单与售后", "不添加陌生客服、不开启借贷", "不向陌生账户转账"]}, {"id": "S04", "type": "冒充熟人借钱", "difficulty": 1, "stages": [{"name": "铺垫", "goal": "用熟悉称呼降低戒心", "lines": ["在吗？我是你表哥，换号了，存一下。", "最近忙不忙？有点事想找你帮个忙。"]}, {"name": "设套", "goal": "提出紧急用钱", "lines": ["我这边临时要交个保证金，卡被限额了，你先帮我转 2000，明天就还你。", "别打电话，我在开会，微信说就行。"]}, {"name": "施压", "goal": "制造时间压力", "lines": ["很急，半小时内要交，过了就来不及了。", "你先转，回头我请你吃饭。"]}, {"name": "收网", "goal": "给出收款方式", "lines": ["转到这个卡号就行，是我朋友的卡。", "转完截图发我。"]}], "red_flags": ["熟人换号后立刻借钱", "拒绝语音/视频核实", "收款账户是'朋友的卡'", "强调紧急、限时"], "correct": ["通过原号码回拨或视频核实", "向共同亲友交叉确认", "未核实前不转账"]}, {"id": "S05", "type": "虚假投资理财（杀猪盘）", "difficulty": 3, "stages": [{"name": "铺垫", "goal": "建立情感或专业信任", "lines": ["最近在做什么？我这边有个内部渠道，收益很稳。", "我自己投了半年，翻了一倍多，可以带你一起。"]}, {"name": "设套", "goal": "用小额盈利验证'靠谱'", "lines": ["你先投 500 试试，我带你操作。", "看，今天又赚了 8%，提现秒到吧？"]}, {"name": "施压", "goal": "诱导加大投入", "lines": ["这波行情就这几天，错过要等半年。", "你先把能动的钱都放进来，我帮你盯着。"]}, {"name": "收网", "goal": "提现受阻、继续加码", "lines": ["平台显示你账户异常，需要缴纳 20% 保证金才能提现。", "再充一笔就能解冻，之前的钱都在里面。"]}], "red_flags": ["陌生人推荐'内部渠道'", "小额提现顺利、大额提现受阻", "要求缴纳保证金/解冻费", "诱导在非官方平台充值"], "correct": ["不通过陌生链接/App 投资", "正规平台提现不需要缴纳保证金", "发现被骗立即报警并保存转账记录"]}, {"id": "S06", "type": "注销校园贷/征信修复", "difficulty": 2, "stages": [{"name": "铺垫", "goal": "用'校园贷记录'制造焦虑", "lines": ["同学你好，系统显示你名下有校园贷账户未注销，会影响你以后考公和征信。", "现在国家要求统一清理，我们可以帮你注销。"]}, {"name": "设套", "goal": "引导在借贷平台操作", "lines": ["注销需要先把额度'清空'，你在各个平台借出来转到我们账户验证。", "这是走流程，验证完额度会恢复。"]}, {"name": "施压", "goal": "强调时限与后果", "lines": ["今天最后一天，过期记录就永久保留了。", "你不配合的话，以后买房贷款都会受影响。"]}, {"name": "收网", "goal": "诱导借贷转账", "lines": ["把借出来的钱转到这个'清算账户'。", "转完把截图发我，我帮你提交注销。"]}], "red_flags": ["声称校园贷不注销影响征信", "要求在多个平台借款'验证额度'", "要求转账到'清算账户'", "限时施压"], "correct": ["征信记录不能通过转账'修复'", "不轻信陌生来电，自行登录官方 App 核实", "不向陌生账户转账"]}, {"id": "S07", "type": "虚假贷款/信用卡提额", "difficulty": 2, "stages": [{"name": "铺垫", "goal": "用低息高额度吸引", "lines": ["您好，您有一笔最高 20 万的备用金额度已预审批通过，利息很低。", "不需要抵押，不看征信，当天就能到账。"]}, {"name": "设套", "goal": "用小额费用测试配合度", "lines": ["开通额度需要先交 299 元会员费，放款后原路退回。", "您先交这个费用，我这边马上给您走审批。"]}, {"name": "施压", "goal": "制造时限与后果压力", "lines": ["这个额度今天有效，过了就要重新排队。", "您不交的话，系统会记录您放弃额度，以后很难再批。"]}, {"name": "收网", "goal": "诱导转账或下载陌生 App", "lines": ["您把费用转到这个账户，备注'服务费'就行。", "或者您下载我们这个 App，在上面操作更方便。"]}], "red_flags": ["放款前先收费（会员费/保证金/解冻费）", "声称不看征信、无视资质", "要求下载陌生 App 或点击不明链接", "要求向个人账户转账"], "correct": ["正规贷款放款前不收取任何费用", "只通过银行或持牌机构官方渠道办理", "不点击陌生链接、不下载陌生 App"]}, {"id": "S08", "type": "虚假购物（低价票/二手交易）", "difficulty": 2, "stages": [{"name": "铺垫", "goal": "用低价和稀缺吸引", "lines": ["我这边有内场票，原价转，就两张。", "走平台抽成太高，私下转给你便宜 200。"]}, {"name": "设套", "goal": "先收小额定金", "lines": ["你先付 200 定金，我帮你留位置。", "（发一张模糊的'订单截图'）看，票在我这。"]}, {"name": "施压", "goal": "用竞争和时限逼迫", "lines": ["好多人问，你要的话尽快，先到先得。", "过了今晚我就转给别人了。"]}, {"name": "收网", "goal": "诱导付尾款或走不明链接", "lines": ["付完尾款我马上把票转给你。", "你点这个链接付款，平台会显示'已付款'。"]}], "red_flags": ["脱离官方平台私下交易", "要求先付定金/尾款", "发送不明收款链接", "拒绝平台验票或当面交易"], "correct": ["只在官方票务平台或正规二手平台交易", "不私下转账给陌生人", "坚持平台担保交易"]}];
+let cur = null, stage = 0, used = {}, history = [], ended = false;
+
+const listEl = document.getElementById('list');
+SCRIPTS.forEach(s => {
+  const d = document.createElement('div');
+  d.className = 'script';
+  d.innerHTML = `<span>${s.type}</span><small>难度 ${s.difficulty}</small>`;
+  d.onclick = () => start(s, d);
+  listEl.appendChild(d);
+});
+
+function start(s, el){
+  document.querySelectorAll('.script').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  cur = s; stage = 0; used = {}; history = []; ended = false; endedBy = ''; refuseStreak = 0; busy = false;
+  const box = document.getElementById('say'), btn = document.getElementById('send');
+  box.disabled = false; btn.disabled = false; box.placeholder = '输入你的回应……'; box.value = '';
+  document.getElementById('msgs').innerHTML = '';
+  document.getElementById('panel').classList.remove('show');
+  document.getElementById('cur-title').textContent = s.type;
+  updateStage();
+  addMsg('bot', s.stages[0].lines[0]);
+  used[0] = 1;
+}
+
+function updateStage(){
+  document.getElementById('cur-stage').textContent = cur ? `阶段：${cur.stages[stage].name}` : '';
+}
+
+function addMsg(who, text){
+  const m = document.createElement('div');
+  m.className = 'msg ' + who;
+  m.textContent = text;
+  document.getElementById('msgs').appendChild(m);
+  m.scrollIntoView({block:'end'});
+  history.push({who, text});
+}
+
+let busy = false, refuseStreak = 0, endedBy = '';
+
+function takeLine(s){
+  const lines = cur.stages[s].lines;
+  const idx = used[s] || 0;
+  if (idx >= lines.length) return null;
+  used[s] = idx + 1;
+  return lines[idx];
+}
+
+function nextReply(){
+  for (let s = stage; s <= 3; s++){
+    const line = takeLine(s);
+    if (line){ stage = s; updateStage(); return line; }
+  }
+  return null;
+}
+
+// 按玩家回应分档推进：顺从→收网，质疑→加压，拒绝→加压，两次拒绝挂断
+function replyFor(text){
+  const complied = RE_COMPLY.test(text) && !RE_REFUSE.test(text);
+  if (complied){ stage = 3; updateStage(); return nextReply(); }
+  if (RE_REFUSE.test(text)){
+    refuseStreak++;
+    if (refuseStreak >= 2) return null;
+    stage = Math.max(stage, 2); updateStage();
+    return nextReply();
+  }
+  if (RE_IDENT.test(text)){
+    stage = Math.max(stage, 2); updateStage();
+    return nextReply();
+  }
+  return nextReply();
+}
+
+function addTyping(){
+  const m = document.createElement('div');
+  m.className = 'msg bot typing';
+  m.textContent = '对方正在输入…';
+  document.getElementById('msgs').appendChild(m);
+  m.scrollIntoView({block:'end'});
+  return m;
+}
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function lockUI(){
+  const box = document.getElementById('say');
+  box.disabled = true;
+  box.placeholder = '训练已结束，点击"结束并复盘"查看结果';
+  document.getElementById('send').disabled = true;
+}
+
+function endConversation(reason){
+  if (ended) return;
+  ended = true;
+  endedBy = reason || 'exhausted';
+  addMsg('bot', '（对方已挂断）');
+  lockUI();
+}
+
+// —— 语义判定 ——
+const RE_IDENT  = /骗子|诈骗|假的|套路|不对|红旗|冒充|安全账户.{0,8}(不存在|假的)|公检法.{0,10}不会/i;
+const RE_VERIFY = /96110|110|报警|派出所|官方(客服|APP|app|渠道|网站)|银行(柜台|网点)|回拨|官网|核实/;
+const RE_HANGUP = /挂断|不聊了|别打了|结束吧|再见|不接|拉黑/;
+const RE_REFUSE = /不(会|能|想|要|给|转|可|提供|下载|共享)|拒绝|休想|死心|凭什么|没门|不配合|别(说|啰嗦|烦)|滚|免谈|绝不/;
+const RE_COMPLY = /(我(这就|马上|现在)?去?(转|汇款|打款|付)|把钱(转|打|汇)|验证码(是|为)?[\dA-Za-z]{4,}|我(发|报|提供)(给你|一下)|下载(这个|一下|app|App)|加你(微信|qq|QQ)|共享屏幕|按你说的(做|办)|照做|听你的)/;
+
+function evaluate(){
+  const msgs = history.filter(m=>m.who==='me').map(m=>m.text);
+  let ident = 0, comply = 0, refused = false, verify = false, hangup = false;
+
+  msgs.forEach(t => {
+    const complied = RE_COMPLY.test(t) && !RE_REFUSE.test(t);
+    if (complied) comply++;
+    else if (RE_REFUSE.test(t)) refused = true;
+
+    if (RE_IDENT.test(t) && ident < 2) ident++;
+    if (RE_VERIFY.test(t)) verify = true;
+    if (RE_HANGUP.test(t)) hangup = true;
+  });
+
+  const sIdent  = ident * 20;                  // 识别话术，最多 40
+  const sVerify = verify ? 30 : 0;             // 正确核实
+  const sEnd    = (hangup || endedBy === 'refuse') ? 20 : 0;   // 终止：主动挂断，或连续拒绝逼停对方
+  const sRefuse = refused ? 10 : 0;
+  const penalty = -Math.min(comply * 30, 60);  // 不当配合
+
+  const score = Math.max(0, Math.min(100, sIdent + sVerify + sEnd + sRefuse + penalty));
+  const missed = [];
+  if (ident === 0) missed.push('没有指出对方是诈骗（识别话术）');
+  else if (ident === 1) missed.push('只识别了一次红旗，可以更明确地指出诈骗类型');
+  if (!verify) missed.push('没有通过官方渠道核实（96110 / 110 / 官方 App）');
+  if (!hangup) missed.push('没有明确终止对话（挂断 / 拉黑）');
+  if (comply) missed.push(`有 ${comply} 次对话顺着对方的要求配合`);
+
+  return {score, level: score >= 85 ? '优秀' : score >= 60 ? '合格' : '需要加强',
+          parts: [
+            {name:'识别话术', got:sIdent, max:40},
+            {name:'正确核实', got:sVerify, max:30},
+            {name:'终止对话', got:sEnd, max:20},
+            {name:'拒绝配合', got:sRefuse, max:10},
+          ], penalty, missed};
+}
+
+document.getElementById('send').onclick = async () => {
+  if (!cur || ended || busy) return;
+  const box = document.getElementById('say');
+  const v = box.value.trim();
+  if (!v) return;
+  addMsg('me', v);
+  box.value = '';
+  if (RE_HANGUP.test(v)){
+    endConversation('user');
+    return;
+  }
+  busy = true;
+  const typing = addTyping();
+  await sleep(700 + Math.random() * 500);
+  typing.remove();
+  const line = replyFor(v);
+  if (line) addMsg('bot', line);
+  else endConversation(refuseStreak >= 2 ? 'refuse' : 'exhausted');
+  busy = false;
+};
+
+document.getElementById('say').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('send').click();
+});
+
+document.getElementById('review').onclick = () => {
+  if (!cur) return;
+  const r = evaluate();
+  const flags = cur.red_flags.map(f=>`<div class="flag">红旗：${f}</div>`).join('');
+  const advice = cur.correct.map(c=>`<li>${c}</li>`).join('');
+  const parts = r.parts.map(p=>{
+    const cls = p.got === p.max ? 'ok' : p.got === 0 ? 'bad' : '';
+    return `<div class="part"><span>${p.name}</span><b class="${cls}">${p.got} / ${p.max}</b></div>`;
+  }).join('');
+  document.getElementById('panel').innerHTML = `
+    <h3>复盘结果 <span class="badge">${r.level}</span></h3>
+    <div class="score">${r.score}<span style="font-size:14px;color:#6b7280"> / 100</span></div>
+    <div class="parts">${parts}</div>
+    ${r.penalty ? `<div class="flag">不当配合扣分：${r.penalty}</div>` : ''}
+    ${r.missed.length ? `<p style="color:#6b7280;font-size:13px;margin-top:12px">没做到的</p><ul>${r.missed.map(m=>`<li>${m}</li>`).join('')}</ul>` : ''}
+    <p style="color:#6b7280;font-size:13px;margin-top:12px">本剧本的高危触发点</p>
+    ${flags}
+    <p style="color:#6b7280;font-size:13px;margin-top:12px">正确应对</p>
+    <ul>${advice}</ul>
+    <p style="color:#9aa1ab;font-size:12px">演示版评分由规则模拟，正式版由复盘 Agent 结合对话逐句标注。</p>`;
+  document.getElementById('panel').classList.add('show');
+  document.getElementById('panel').scrollIntoView({behavior:'smooth'});
+};
+</script>
+</body>
+</html>
