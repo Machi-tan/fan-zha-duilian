@@ -178,6 +178,20 @@ Demo 是**单文件、零依赖**的本地模拟：剧本数据内嵌，评分�
 
 ---
 
+## 如何加入协作
+
+仓库是公开的，**只读查看不需要任何权限**：
+
+```bash
+git clone https://github.com/hjjtt/fan-zha-duilian.git
+```
+
+需要提交代码（push 权限）的话，队员到下面这个页面提交申请，队长审批通过即可：
+
+👉 https://github.com/hjjtt/fan-zha-duilian/settings/access
+
+或者直接在仓库页面 fork，改动后提 Pull Request。
+
 ## 协作出力点
 
 当前最需要人手的几件事（详见 [项目记忆.md](项目记忆.md) 的待办）：
